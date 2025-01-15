@@ -124,6 +124,7 @@ def procesar_archivo_xml(ruta_archivo, consulta=None):
         "numeros_prediales": list(set(numeros_prediales))  # Eliminar duplicados
     }
 
+#CONSULTA 1
 def identificar_predios_sin_interesados(ruta_archivo):
     """
     Identifica los números prediales nacionales únicos que no tienen interesados asociados.
@@ -162,6 +163,97 @@ def identificar_predios_sin_interesados(ruta_archivo):
     return {
         "conteo": len(predios_sin_datos),
         "numeros_prediales": predios_sin_datos
+    }
+
+#CONSULTA 2
+def identificar_predios_sin_avaluos(ruta_archivo):
+    """
+    Identifica los números prediales nacionales cuyos <avaluo> están vacíos o ausentes.
+
+    Args:
+        ruta_archivo (str): Ruta del archivo XML a procesar.
+
+    Returns:
+        dict: Diccionario con conteo y lista de predios sin avaluos.
+    """
+    predios_sin_avaluos = {}
+    try:
+        # Cargar y parsear el archivo XML
+        tree = ET.parse(ruta_archivo)
+        root = tree.getroot()
+
+        # Iterar sobre cada predio
+        for predio in root.findall(".//predio"):
+            # Obtener el código predial nacional
+            codigo_predial = predio.find("codigo_predial_nacional").text
+
+            # Verificar si <avaluo> está vacío o ausente
+            avaluo = predio.find(".//avaluo")
+            if avaluo is None or not avaluo.text.strip():  # Nodo <avaluo> ausente o sin valor
+                if codigo_predial:
+                    predios_sin_avaluos[codigo_predial] = True
+
+    except Exception as e:
+        print(f"Error procesando el archivo {ruta_archivo}: {e}")
+        return {"conteo": 0, "numeros_prediales": []}
+
+    # Extraer las claves de predios sin avaluos
+    predios_sin_datos = list(predios_sin_avaluos.keys())
+
+    return {
+        "conteo": len(predios_sin_datos),
+        "numeros_prediales": predios_sin_datos
+    }
+
+# CONSULTA 3
+def identificar_predios_avaluo_cero_o_condiciones(ruta_archivo):
+    """
+    Identifica los predios cuyo valor de avalúo es 0 o ausente y cumplen con
+    condiciones adicionales.
+
+    Condiciones adicionales:
+    - La posición 22 del número predial nacional es igual a '0'.
+    - La condición del predio es 'NPH'.
+
+    Args:
+        ruta_archivo (str): Ruta del archivo XML a procesar.
+
+    Returns:
+        dict: Diccionario con conteo y lista de predios que cumplen las condiciones.
+    """
+    predios_avaluo_cero = {}
+    try:
+        # Cargar y parsear el archivo XML
+        tree = ET.parse(ruta_archivo)
+        root = tree.getroot()
+
+        # Iterar sobre cada predio
+        for predio in root.findall(".//predio"):
+            # Obtener campos relevantes
+            codigo_predial = predio.find("codigo_predial_nacional").text
+            condicion_predio = predio.find("condicion_predio").text
+            avaluo = predio.find(".//avaluo")
+            avaluo_valor = int(avaluo.text) if avaluo is not None and avaluo.text.isdigit() else 0
+
+            # Verificar condiciones
+            if avaluo_valor == 0:
+                posicion_22 = codigo_predial[21] if len(codigo_predial) >= 22 else None
+                if posicion_22 == '0' or condicion_predio == "NPH":
+                    predios_avaluo_cero[codigo_predial] = {
+                        "avaluo": avaluo_valor,
+                        "condicion_predio": condicion_predio
+                    }
+
+    except Exception as e:
+        print(f"Error procesando el archivo {ruta_archivo}: {e}")
+        return {"conteo": 0, "numeros_prediales": []}
+
+    # Extraer las claves de predios que cumplen las condiciones
+    predios_cumplen = list(predios_avaluo_cero.keys())
+
+    return {
+        "conteo": len(predios_cumplen),
+        "numeros_prediales": predios_cumplen
     }
 
 def comparar_diferencias(numeros_2024, numeros_2025):
@@ -227,7 +319,27 @@ def main(ruta_2024, ruta_2025, ruta_resultados):
             reporte.write(f"Cantidad de predios sin propietarios: {resultado_2024['conteo']}\n")
             reporte.write("Números prediales únicos:\n")
             for codigo in resultado_2024["numeros_prediales"]:
-                reporte.write(f"- {codigo}\n")
+                reporte.write(f"{codigo}\n")
+            reporte.write("\n\n")
+
+            # Consulta 2: Predios sin avaluos catastrales
+            resultado_sin_avaluos_2024 = identificar_predios_sin_avaluos(ruta_archivo_2024)
+            reporte.write(f"---- RESULTADOS MUNICIPIO {codigo_municipio} CON PREDIOS SIN AVALUOS CATASTRALES, PARA LA VIGENCIA 2024 ----\n")
+            reporte.write(f"----    RESULTADOS {archivo_2024}:    ----\n")
+            reporte.write(f"Cantidad de predios sin avaluos catastrales: {resultado_sin_avaluos_2024['conteo']}\n")
+            reporte.write("Números prediales únicos:\n")
+            for codigo in resultado_sin_avaluos_2024["numeros_prediales"]:
+                reporte.write(f"{codigo}\n")
+            reporte.write("\n\n")
+
+            # Consulta 3: Predios NPH con avaluo igual a cero
+            resultado_cero = identificar_predios_avaluo_cero_o_condiciones(ruta_archivo_2024)
+            reporte.write(f"---- RESULTADOS MUNICIPIO {codigo_municipio} CON PREDIOS NPH CON AVALUOS IGUALES A CERO, PARA LA VIGENCIA 2024 ----\n")
+            reporte.write(f"----    RESULTADOS {archivo_2024}:    ----\n")
+            reporte.write(f"- Predios NPH con avalúo cero: {resultado_cero['conteo']}\n")
+            reporte.write("Números prediales únicos:\n")
+            for codigo in resultado_cero["numeros_prediales"]:
+                reporte.write(f"{codigo}\n")
             reporte.write("\n\n")
 
         # Procesar archivos válidos 2025
@@ -245,8 +357,28 @@ def main(ruta_2024, ruta_2025, ruta_resultados):
             reporte.write(f"Cantidad de predios sin propietarios: {resultado_2025['conteo']}\n")
             reporte.write("Números prediales únicos:\n")
             for codigo in resultado_2025["numeros_prediales"]:
-                reporte.write(f"- {codigo}\n")
-            reporte.write("\n\n")        
+                reporte.write(f"{codigo}\n")
+            reporte.write("\n\n")
+
+            # Consulta 2: Predios sin avaluos catastrales
+            resultado_sin_avaluos_2025 = identificar_predios_sin_avaluos(ruta_archivo_2025)
+            reporte.write(f"---- RESULTADOS MUNICIPIO {codigo_municipio} CON PREDIOS SIN AVALUOS CATASTRALES, PARA LA VIGENCIA 2025 ----\n")
+            reporte.write(f"----    RESULTADOS {archivo_2025}:    ----\n")
+            reporte.write(f"Cantidad de predios sin avaluos catastrales: {resultado_sin_avaluos_2025['conteo']}\n")
+            reporte.write("Números prediales únicos:\n")
+            for codigo in resultado_sin_avaluos_2025["numeros_prediales"]:
+                reporte.write(f"{codigo}\n")
+            reporte.write("\n\n")
+
+            # CONSULTA 3: Identificar predios con avalúo cero o condiciones
+            resultado_cero = identificar_predios_avaluo_cero_o_condiciones(ruta_archivo_2025)
+            reporte.write(f"---- RESULTADOS MUNICIPIO {codigo_municipio} CON PREDIOS NPH CON AVALUOS IGUALES A CERO, PARA LA VIGENCIA 2025 ----\n")
+            reporte.write(f"----    RESULTADOS {archivo_2025}:    ----\n")
+            reporte.write(f"- Predios NPH con avalúo cero: {resultado_cero['conteo']}\n")
+            reporte.write("Números prediales únicos:\n")
+            for codigo in resultado_cero["numeros_prediales"]:
+                reporte.write(f"{codigo}\n")
+            reporte.write("\n\n")
 
         print("Procesamiento completado. Resultados almacenados en el archivo consolidado.")
 

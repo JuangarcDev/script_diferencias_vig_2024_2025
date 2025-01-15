@@ -27,10 +27,35 @@ Cantidad de predios sin propietarios: 0
 Números prediales únicos:
 
 
+---- RESULTADOS MUNICIPIO 25019 CON PREDIOS SIN AVALUOS CATASTRALES, PARA LA VIGENCIA 2024 ----
+----    RESULTADOS Registro_catastral_25019.xml:    ----
+Cantidad de predios sin avaluos catastrales: 0
+Números prediales únicos:
+
+
+---- RESULTADOS MUNICIPIO 25019 CON PREDIOS NPH CON AVALUOS IGUALES A CERO, PARA LA VIGENCIA 2024 ----
+----    RESULTADOS Registro_catastral_25019.xml:    ----
+- Predios NPH con avalúo cero: 0
+Números prediales únicos:
+
+
 ---- RESULTADOS MUNICIPIO 25040 CON PREDIOS SIN INTERESADOS, PARA LA VIGENCIA 2024 ----
 ----    RESULTADOS Registro_catastral_25040.xml:    ----
 Cantidad de predios sin propietarios: 0
 Números prediales únicos:
+
+
+---- RESULTADOS MUNICIPIO 25040 CON PREDIOS SIN AVALUOS CATASTRALES, PARA LA VIGENCIA 2024 ----
+----    RESULTADOS Registro_catastral_25040.xml:    ----
+Cantidad de predios sin avaluos catastrales: 0
+Números prediales únicos:
+
+
+---- RESULTADOS MUNICIPIO 25040 CON PREDIOS NPH CON AVALUOS IGUALES A CERO, PARA LA VIGENCIA 2024 ----
+----    RESULTADOS Registro_catastral_25040.xml:    ----
+- Predios NPH con avalúo cero: 1
+Números prediales únicos:
+250400100000000920010000000000
 
 
 ---- RESULTADOS MUNICIPIO 25053 CON PREDIOS SIN INTERESADOS, PARA LA VIGENCIA 2024 ----
@@ -39,9 +64,37 @@ Cantidad de predios sin propietarios: 0
 Números prediales únicos:
 
 
+---- RESULTADOS MUNICIPIO 25053 CON PREDIOS SIN AVALUOS CATASTRALES, PARA LA VIGENCIA 2024 ----
+----    RESULTADOS Registro_catastral_25053.xml:    ----
+Cantidad de predios sin avaluos catastrales: 0
+Números prediales únicos:
+
+
+---- RESULTADOS MUNICIPIO 25053 CON PREDIOS NPH CON AVALUOS IGUALES A CERO, PARA LA VIGENCIA 2024 ----
+----    RESULTADOS Registro_catastral_25053.xml:    ----
+- Predios NPH con avalúo cero: 4
+Números prediales únicos:
+250530100000000690008200000000
+250530100000000040026200000000
+250530100000000300002200000000
+250530100000000710007200000000
+
+
 ---- RESULTADOS MUNICIPIO 25019 CON PREDIOS SIN INTERESADOS, PARA LA VIGENCIA 2025 ----
 ----    RESULTADOS Registro_catastral_25019.xml:    ----
 Cantidad de predios sin propietarios: 0
+Números prediales únicos:
+
+
+---- RESULTADOS MUNICIPIO 25019 CON PREDIOS SIN AVALUOS CATASTRALES, PARA LA VIGENCIA 2025 ----
+----    RESULTADOS Registro_catastral_25019.xml:    ----
+Cantidad de predios sin avaluos catastrales: 0
+Números prediales únicos:
+
+
+---- RESULTADOS MUNICIPIO 25019 CON PREDIOS NPH CON AVALUOS IGUALES A CERO, PARA LA VIGENCIA 2025 ----
+----    RESULTADOS Registro_catastral_25019.xml:    ----
+- Predios NPH con avalúo cero: 0
 Números prediales únicos:
 
 
@@ -51,9 +104,39 @@ Cantidad de predios sin propietarios: 0
 Números prediales únicos:
 
 
+---- RESULTADOS MUNICIPIO 25040 CON PREDIOS SIN AVALUOS CATASTRALES, PARA LA VIGENCIA 2025 ----
+----    RESULTADOS Registro_catastral_25040.xml:    ----
+Cantidad de predios sin avaluos catastrales: 0
+Números prediales únicos:
+
+
+---- RESULTADOS MUNICIPIO 25040 CON PREDIOS NPH CON AVALUOS IGUALES A CERO, PARA LA VIGENCIA 2025 ----
+----    RESULTADOS Registro_catastral_25040.xml:    ----
+- Predios NPH con avalúo cero: 2
+Números prediales únicos:
+250400100000000920010000000000
+250400500000000010036900000000
+
+
 ---- RESULTADOS MUNICIPIO 25053 CON PREDIOS SIN INTERESADOS, PARA LA VIGENCIA 2025 ----
 ----    RESULTADOS Registro_catastral_25053.xml:    ----
 Cantidad de predios sin propietarios: 0
 Números prediales únicos:
+
+
+---- RESULTADOS MUNICIPIO 25053 CON PREDIOS SIN AVALUOS CATASTRALES, PARA LA VIGENCIA 2025 ----
+----    RESULTADOS Registro_catastral_25053.xml:    ----
+Cantidad de predios sin avaluos catastrales: 0
+Números prediales únicos:
+
+
+---- RESULTADOS MUNICIPIO 25053 CON PREDIOS NPH CON AVALUOS IGUALES A CERO, PARA LA VIGENCIA 2025 ----
+----    RESULTADOS Registro_catastral_25053.xml:    ----
+- Predios NPH con avalúo cero: 4
+Números prediales únicos:
+250530100000000690008200000000
+250530100000000300002200000000
+250530100000000040026200000000
+250530100000000710007200000000
 
 
