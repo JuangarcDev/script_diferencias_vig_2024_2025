@@ -1,0 +1,49 @@
+CUANDO EL TIPO DE DOCUMENTO DEL INTERESADO ES "SECUENCIAL" POR LO GENERAL NO TIENE VALOR DE DOCUMENTO, Y POR LO GENERAL FALTAN VARIOS DE LOS DATOS PARA SU CORRECTA IDENTIFICACION DE PROPIETARIO / INTERESADO.
+
+CONSULTA QUE IDENTIFICA LOS NUMEROS PREDIALES, SIN NUMERO DE DOCUMENTO ASOCIADO:
+
+def identificar_predios_sin_propietarios(ruta_archivo):
+    """
+    Identifica los números prediales nacionales únicos que no tienen propietarios asociados.
+
+    Args:
+        ruta_archivo (str): Ruta del archivo XML a procesar.
+
+    Returns:
+        dict: Diccionario con conteo y lista de predios sin propietarios.
+    """
+    predios_sin_propietarios = {}
+    try:
+        # Cargar y parsear el archivo XML
+        tree = ET.parse(ruta_archivo)
+        root = tree.getroot()
+
+        # Agrupar predios por "codigo_predial_nacional"
+        for predio in root.findall(".//predio"):
+            codigo_predial = predio.find("codigo_predial_nacional").text
+
+            # Buscar si tiene algún documento asociado
+            interesados = predio.find(".//interesados/persona_natural/documento")
+            documento = interesados.text if interesados is not None else ""
+
+            # Si el documento está vacío o es nulo, lo contamos
+            if codigo_predial:
+                if codigo_predial not in predios_sin_propietarios:
+                    predios_sin_propietarios[codigo_predial] = 0
+
+                if documento.strip() == "":
+                    predios_sin_propietarios[codigo_predial] += 1
+
+        # Filtrar predios donde todos los registros de "documento" sean vacíos
+        predios_sin_documentos = [
+            predio for predio, conteo in predios_sin_propietarios.items() if conteo > 0
+        ]
+
+    except Exception as e:
+        print(f"Error procesando el archivo {ruta_archivo}: {e}")
+        return {"conteo": 0, "numeros_prediales": []}
+
+    return {
+        "conteo": len(predios_sin_documentos),
+        "numeros_prediales": predios_sin_documentos
+    }

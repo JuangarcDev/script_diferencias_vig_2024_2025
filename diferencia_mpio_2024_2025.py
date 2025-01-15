@@ -31,13 +31,14 @@ import os
 import re
 import xml.etree.ElementTree as ET
 
-def validar_carpetas_y_archivos(ruta_2024, ruta_2025):
+def validar_carpetas_y_archivos(ruta_2024, ruta_2025, reporte=None):
     """
     Valida las carpetas de entrada y verifica la estructura de los archivos XML.
 
     Args:
         ruta_2024 (str): Ruta de la carpeta para vigencia 2024.
         ruta_2025 (str): Ruta de la carpeta para vigencia 2025.
+        reporte (file, optional): Archivo abierto para escribir el reporte.
 
     Returns:
         dict: Resultado con diferencias, archivos válidos y no válidos en ambas carpetas.
@@ -60,23 +61,25 @@ def validar_carpetas_y_archivos(ruta_2024, ruta_2025):
         "faltantes_2025": list(set(archivos_validos_2024) - set(archivos_validos_2025))
     }
 
-    # Imprimir conteos y nombres de archivos
-    print("Conteo inicial de archivos:")
-    print(f"- 2024: {len(todos_archivos_2024)} archivos encontrados")
-    print(f"- 2025: {len(todos_archivos_2025)} archivos encontrados")
-    print("\nArchivos que cumplen con la estructura de nombre:")
-    print(f"- 2024: {len(archivos_validos_2024)} archivos válidos")
-    print(f"- 2025: {len(archivos_validos_2025)} archivos válidos")
-    print("\nArchivos que no cumplen con la estructura:")
-    print(f"- 2024: {len(archivos_no_validos_2024)} archivos no válidos")
-    print(f"  Nombres: {', '.join(archivos_no_validos_2024)}")
-    print(f"- 2025: {len(archivos_no_validos_2025)} archivos no válidos")
-    print(f"  Nombres: {', '.join(archivos_no_validos_2025)}")
-    print("\nDiferencias entre las carpetas:")
-    print(f"- Archivos faltantes en 2024: {len(diferencias['faltantes_2024'])}")
-    print(f"  Nombres: {', '.join(diferencias['faltantes_2024']) if diferencias['faltantes_2024'] else 'Ninguno'}")
-    print(f"- Archivos faltantes en 2025: {len(diferencias['faltantes_2025'])}")
-    print(f"  Nombres: {', '.join(diferencias['faltantes_2025']) if diferencias['faltantes_2025'] else 'Ninguno'}")
+    # Escribir en el archivo de reporte si se proporciona
+    if reporte:
+        reporte.write("Conteo inicial de archivos:\n")
+        reporte.write(f"- 2024: {len(todos_archivos_2024)} archivos encontrados\n")
+        reporte.write(f"- 2025: {len(todos_archivos_2025)} archivos encontrados\n")
+        reporte.write("\nArchivos que cumplen con la estructura de nombre:\n")
+        reporte.write(f"- 2024: {len(archivos_validos_2024)} archivos válidos\n")
+        reporte.write(f"- 2025: {len(archivos_validos_2025)} archivos válidos\n")
+        reporte.write("\nArchivos que no cumplen con la estructura:\n")
+        reporte.write(f"- 2024: {len(archivos_no_validos_2024)} archivos no válidos\n")
+        reporte.write(f"  Nombres: {', '.join(archivos_no_validos_2024)}\n")
+        reporte.write(f"- 2025: {len(archivos_no_validos_2025)} archivos no válidos\n")
+        reporte.write(f"  Nombres: {', '.join(archivos_no_validos_2025)}\n")
+        reporte.write("\nDiferencias entre las carpetas:\n")
+        reporte.write(f"- Archivos faltantes en 2024: {len(diferencias['faltantes_2024'])}\n")
+        reporte.write(f"  Nombres: {', '.join(diferencias['faltantes_2024']) if diferencias['faltantes_2024'] else 'Ninguno'}\n")
+        reporte.write(f"- Archivos faltantes en 2025: {len(diferencias['faltantes_2025'])}\n")
+        reporte.write(f"  Nombres: {', '.join(diferencias['faltantes_2025']) if diferencias['faltantes_2025'] else 'Ninguno'}\n")
+        reporte.write("\n")
 
     return {
         "archivos_validos_2024": archivos_validos_2024,
@@ -121,53 +124,45 @@ def procesar_archivo_xml(ruta_archivo, consulta=None):
         "numeros_prediales": list(set(numeros_prediales))  # Eliminar duplicados
     }
 
-def identificar_predios_sin_propietarios(ruta_archivo):
+def identificar_predios_sin_interesados(ruta_archivo):
     """
-    Identifica los números prediales nacionales únicos que no tienen propietarios asociados.
+    Identifica los números prediales nacionales únicos que no tienen interesados asociados.
+    Un predio se considera sin interesados si la sección <interesados> está vacía o no existe.
 
     Args:
         ruta_archivo (str): Ruta del archivo XML a procesar.
 
     Returns:
-        dict: Diccionario con conteo y lista de predios sin propietarios.
+        dict: Diccionario con conteo y lista de predios sin interesados.
     """
-    predios_sin_propietarios = {}
+    predios_sin_interesados = {}
     try:
         # Cargar y parsear el archivo XML
         tree = ET.parse(ruta_archivo)
         root = tree.getroot()
 
-        # Agrupar predios por "codigo_predial_nacional"
+        # Iterar sobre cada predio
         for predio in root.findall(".//predio"):
+            # Obtener el código predial nacional
             codigo_predial = predio.find("codigo_predial_nacional").text
 
-            # Buscar si tiene algún documento asociado
-            interesados = predio.find(".//interesados/persona_natural/documento")
-            documento = interesados.text if interesados is not None else ""
-
-            # Si el documento está vacío o es nulo, lo contamos
-            if codigo_predial:
-                if codigo_predial not in predios_sin_propietarios:
-                    predios_sin_propietarios[codigo_predial] = 0
-
-                if documento.strip() == "":
-                    predios_sin_propietarios[codigo_predial] += 1
-
-        # Filtrar predios donde todos los registros de "documento" sean vacíos
-        predios_sin_documentos = [
-            predio for predio, conteo in predios_sin_propietarios.items() if conteo > 0
-        ]
+            # Verificar si <interesados> está vacío o no existe
+            interesados = predio.find(".//interesados")
+            if interesados is None or len(interesados) == 0:  # Nodo <interesados> ausente o sin subnodos
+                if codigo_predial:
+                    predios_sin_interesados[codigo_predial] = True
 
     except Exception as e:
         print(f"Error procesando el archivo {ruta_archivo}: {e}")
         return {"conteo": 0, "numeros_prediales": []}
 
+    # Extraer las claves de predios sin interesados
+    predios_sin_datos = list(predios_sin_interesados.keys())
+
     return {
-        "conteo": len(predios_sin_documentos),
-        "numeros_prediales": predios_sin_documentos
+        "conteo": len(predios_sin_datos),
+        "numeros_prediales": predios_sin_datos
     }
-
-
 
 def comparar_diferencias(numeros_2024, numeros_2025):
     """
@@ -182,6 +177,19 @@ def comparar_diferencias(numeros_2024, numeros_2025):
     """
     return list(set(numeros_2025) - set(numeros_2024))
 
+def extraer_codigo_municipio(nombre_archivo):
+    """
+    Extrae el código del municipio basado en el nombre del archivo.
+    Args:
+        nombre_archivo (str): Nombre del archivo, ej. "Registro_catastral_25019.xml".
+    Returns:
+        str: Código del municipio (los 5 caracteres antes de .xml o después del segundo _).
+    """
+    if nombre_archivo.endswith(".xml"):
+        # Extraer los 5 caracteres antes de ".xml"
+        return nombre_archivo.split("_")[-1].split(".")[0]
+    return None
+
 def main(ruta_2024, ruta_2025, ruta_resultados):
     """
     Función principal para ejecutar el script.
@@ -194,30 +202,54 @@ def main(ruta_2024, ruta_2025, ruta_resultados):
     Returns:
         None
     """
-    # Validar carpetas y archivos
-    validacion = validar_carpetas_y_archivos(ruta_2024, ruta_2025)
-
     # Archivo consolidado de resultados
     ruta_reporte_consolidado = os.path.join(ruta_resultados, "Reporte_Consolidado.txt")
 
     with open(ruta_reporte_consolidado, "w") as reporte:
-        reporte.write("Reporte consolidado de predios sin propietarios asociados\n")
-        reporte.write("--------------------------------------------------------\n\n")
+        reporte.write("Reporte consolidado de validación de archivos\n")
+        reporte.write("------------------------------------------------\n\n")
 
-        # Procesar archivos válidos
+        # Validar carpetas y escribir resultados en el reporte
+        validacion = validar_carpetas_y_archivos(ruta_2024, ruta_2025, reporte)
+
+        # Procesar archivos válidos 2024
         for archivo_2024 in validacion["archivos_validos_2024"]:
-            ruta_archivo = os.path.join(ruta_2024, archivo_2024)
-            resultado = identificar_predios_sin_propietarios(ruta_archivo)
+            ruta_archivo_2024 = os.path.join(ruta_2024, archivo_2024)
+            resultado_2024 = identificar_predios_sin_interesados(ruta_archivo_2024)
+
+            # Extraer código del municipio
+            codigo_municipio = extraer_codigo_municipio(archivo_2024)
 
             # Escribir resultados en el archivo consolidado
+            #CONSULTA 1 PREDIOS SIN INTERESADOS
+            reporte.write(f"---- RESULTADOS MUNICIPIO {codigo_municipio} CON PREDIOS SIN INTERESADOS, PARA LA VIGENCIA 2024 ----\n")
             reporte.write(f"----    RESULTADOS {archivo_2024}:    ----\n")
-            reporte.write(f"Cantidad de predios sin propietarios: {resultado['conteo']}\n")
+            reporte.write(f"Cantidad de predios sin propietarios: {resultado_2024['conteo']}\n")
             reporte.write("Números prediales únicos:\n")
-            for codigo in resultado["numeros_prediales"]:
+            for codigo in resultado_2024["numeros_prediales"]:
                 reporte.write(f"- {codigo}\n")
-            reporte.write("\n")
+            reporte.write("\n\n")
+
+        # Procesar archivos válidos 2025
+        for archivo_2025 in validacion["archivos_validos_2025"]:
+            ruta_archivo_2025 = os.path.join(ruta_2025, archivo_2025)
+            resultado_2025 = identificar_predios_sin_interesados(ruta_archivo_2025)
+
+            # Extraer código del municipio
+            codigo_municipio = extraer_codigo_municipio(archivo_2025)
+        
+            # Escribir resultados en el archivo consolidado
+            #CONSULTA 1 PRESIOS SIN INTERESADOS
+            reporte.write(f"---- RESULTADOS MUNICIPIO {codigo_municipio} CON PREDIOS SIN INTERESADOS, PARA LA VIGENCIA 2025 ----\n")
+            reporte.write(f"----    RESULTADOS {archivo_2025}:    ----\n")
+            reporte.write(f"Cantidad de predios sin propietarios: {resultado_2025['conteo']}\n")
+            reporte.write("Números prediales únicos:\n")
+            for codigo in resultado_2025["numeros_prediales"]:
+                reporte.write(f"- {codigo}\n")
+            reporte.write("\n\n")        
 
         print("Procesamiento completado. Resultados almacenados en el archivo consolidado.")
+
 
 if __name__ == "__main__":
     # Rutas de ejemplo, actualiza según tu entorno
