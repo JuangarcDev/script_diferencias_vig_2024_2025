@@ -29,7 +29,28 @@ Estructura del script:
 
 import os
 import re
+import psycopg2
 import xml.etree.ElementTree as ET
+from decouple import config
+
+# CONECTAR CON LA BASE DE DATOS
+def connect_to_db(reporte):
+    """
+    Función para conectar con la DB de PostgreSQL
+    """
+    try:
+        conn = psycopg2.connect(
+            host=config('DB_HOST'),
+            database=config('DB_NAME'),
+            user=config('DB_USER'),
+            password=config('DB_PASSWORD'),
+            port=config('DB_PORT')
+        )
+        reporte.write(f"Conexión exitosa a la Base de Datos PostgreSQL.\n\n")
+        return conn
+    except Exception as e:
+        reporte.write(f"Error al conectar con la Base de Datos PostgreSQL: {e}")
+        return None
 
 def validar_carpetas_y_archivos(ruta_enero_2024, ruta_dic_2024, reporte=None):
     """
@@ -221,18 +242,6 @@ def identificar_predios_avaluo_cero_o_condiciones(ruta_archivo):
         "numeros_prediales": predios_cumplen
     }
 
-def comparar_diferencias(numeros_2024, numeros_2025):
-    """
-    Compara los números prediales entre dos listas y encuentra diferencias.
-
-    Args:
-        numeros_2024 (list): Lista de números prediales de la vigencia_enero_2024.
-        numeros_2025 (list): Lista de números prediales de la vigencia_diciembre_2024.
-
-    Returns:
-        list: Lista de números prediales que están en 2025 pero no en 2024.
-    """
-    return list(set(numeros_2025) - set(numeros_2024))
 
 def obtener_predios_desde_xml(ruta_archivo):
     """
@@ -289,7 +298,8 @@ def comparar_predios(predios_enero, predios_dic, reporte):
             predios_con_diferencias.append(codigo)
             reporte.write(f"{codigo}\n")
 
-    acumulados_comunes.extend(predios_con_diferencias)
+    # Actualizar acumulados_comunes asegurando unicidad
+    acumulados_comunes.update(predios_con_diferencias)
     # Conteo de predios con diferencias
     reporte.write("\n=== Estadísticas ===\n")
     reporte.write(f"Cantidad de predios con diferencias para el municipio especifico: {len(predios_con_diferencias)}\n")
@@ -336,6 +346,47 @@ def extraer_codigo_municipio(nombre_archivo):
         return nombre_archivo.split("_")[-1].split(".")[0]
     return None
 
+def extract_land_data(db_connection, reporte):
+    """
+    Función para extraer el atributo 'land' de la consulta definida.
+
+    Args:
+        db_connection: Conexión activa a la base de datos PostgreSQL.
+        reporte: Objeto archivo para escribir el reporte.
+
+    Returns:
+        conjunto_land (set): Conjunto de valores únicos del atributo 'land'.
+    """
+    query = """
+    SELECT t1.land
+    FROM data.land_tansacts_tracking t1
+    JOIN data.tramite t2
+    ON t1.transact = t2.id
+    WHERE t1.transact IS NOT NULL 
+    AND t2.estado_actual_fecha_inicio >= '2024-01-01 00:00:00'
+    AND t2.estado_actual_fecha_inicio <= '2024-12-31 23:59:59';
+    """
+    try:
+        cursor = db_connection.cursor()
+        cursor.execute(query)
+        results = cursor.fetchall()
+
+        # Extraer valores únicos
+        conjunto_land = set(row[0] for row in results if row[0] is not None)
+
+        # Reportar conteo y primeros 10 registros
+        reporte.write(f"Total de registros encontrados: {len(conjunto_land)}\n")
+        reporte.write("Primeros 10 registros:\n")
+        for land in list(conjunto_land)[:10]:
+            reporte.write(f"{land}\n")
+        reporte.write("\n")
+
+        return conjunto_land
+
+    except Exception as e:
+        reporte.write(f"Error al ejecutar la consulta: {e}\n")
+        return set()
+
 def main(ruta_enero_2024, ruta_dic_2024, ruta_resultados):
     """
     Función principal para ejecutar el script.
@@ -348,12 +399,20 @@ def main(ruta_enero_2024, ruta_dic_2024, ruta_resultados):
     Returns:
         None
     """
+
+
     # Archivo consolidado de resultados
     ruta_reporte_consolidado = os.path.join(ruta_resultados, "Reporte_Consolidado.txt")
 
     with open(ruta_reporte_consolidado, "w") as reporte:
         reporte.write("Reporte consolidado de validación de archivos\n")
         reporte.write("------------------------------------------------\n\n")
+
+        # CONEXION A LA DB:
+        db_connection = connect_to_db(reporte)
+        if not db_connection:
+            reporte.write("Conexión a la DB fallida. Terminando el script.")
+            return
 
         # Validar carpetas y escribir resultados en el reporte
         validacion = validar_carpetas_y_archivos(ruta_enero_2024, ruta_dic_2024, reporte)
@@ -443,12 +502,19 @@ def main(ruta_enero_2024, ruta_dic_2024, ruta_resultados):
                 reporte.write(f"{codigo}\n")
             reporte.write("\n\n")
 
+        if db_connection:
+            # Llamar a la función de extracción de datos
+            conjunto_land = extract_land_data(db_connection, reporte)
+            reporte.write(f"Valores únicos extraídos: {len(conjunto_land)}\n")
+        else:
+            reporte.write("No se pudo establecer la conexión con la base de datos.\n")
+
         print("Procesamiento completado. Resultados almacenados en el archivo consolidado.")
 
 
 if __name__ == "__main__":
     # Lista global para acumular los números prediales totales
-    acumulados_comunes = []
+    acumulados_comunes = set()
 
     # Rutas de ejemplo, actualiza según tu entorno
     ruta_enero_2024 = r"C:\ACC\SCRIPT_13012025_COMP_MPIO_2024_2025\Registros_2024_enero_5"
