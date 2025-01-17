@@ -336,30 +336,32 @@ def comparar_predios(predios_enero, predios_dic, reporte):
     reporte.write("=== Comparación de predios coincidentes ===\n")
     reporte.write("=== PREDIOS QUE CONTIENEN DIFERENCIAS ENTRE LA VIGENCIA ENERO 2024 Y DICIEMBRE DE 2024 ===\n")
     predios_con_diferencias = []
-
+    reporte.write("Códigos Prediales con diferencias entre las vigencias (Ignorando las diferencias que son excepciones):\n")
     #DESGLOCE POR ATRIBUTOS DE LA INFORMACION DEL PREDIO
     for codigo in comunes:
         diferencias = []
         predio_enero = predios_enero[codigo]
         predio_dic = predios_dic[codigo]
+        
 
         for key in predio_enero.keys():
             valor_enero = predio_enero[key]
             valor_dic = predio_dic.get(key, None)
 
-            # Regla 1: Omitir diferencias entre NULL y 0/0.0
+            # Regla 1: Omitir diferencias entre NULL y 0/0.0 -- PROBADA FUNCIONANDO
             if (valor_enero in [None, '', 'NULL'] and valor_dic in [0, 0.0]) or \
                (valor_dic in [None, '', 'NULL'] and valor_enero in [0, 0.0]):
                 continue
 
-            # Regla 2: Ignorar cambios en <direccion> si el valor previo era "SIN DIRECCION"
+            # Regla 2: Ignorar cambios en <direccion> si el valor previo era "SIN DIRECCION" -- PROBADA FUNCIONANDO
             if key == 'direccion' and valor_enero == "SIN DIRECCION":
                 continue
 
-            # Regla 3: Ignorar cambios en nombres si son "DESCONOCIDO"
-            if key in ['primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido'] and \
-               valor_enero == "DESCONOCIDO":
-                continue
+            # Regla 3: Ignorar cambios en nombres si son "DESCONOCIDO" (evaluando subniveles)
+            if key == 'interesados':
+                if not comparar_interesados(valor_enero, valor_dic):
+                    continue
+            
 
             # Comparar valores si no cumplen las excepciones
             if valor_enero != valor_dic:
@@ -368,8 +370,7 @@ def comparar_predios(predios_enero, predios_dic, reporte):
         # Si hay diferencias, añadir al reporte
         if diferencias:
             predios_con_diferencias.append(codigo)
-            reporte.write(f"Código: {codigo}\n")
-            reporte.write("\n".join(diferencias) + "\n\n")    
+            reporte.write(f"{codigo}\n")    
 
     # Actualizar acumulados_comunes asegurando unicidad
     acumulados_comunes.update(predios_con_diferencias)
@@ -377,6 +378,39 @@ def comparar_predios(predios_enero, predios_dic, reporte):
     reporte.write("\n=== Estadísticas ===\n")
     reporte.write(f"Cantidad de predios con diferencias para el municipio especifico: {len(predios_con_diferencias)}\n")
     reporte.write(f"Cantidad total de predios con diferencias acumulados para todos los municipios: {len(acumulados_comunes)}\n\n")
+
+def comparar_interesados(interesados_enero, interesados_dic):
+    """
+    Compara las estructuras de 'interesados' y omite diferencias en nombres desconocidos.
+    Args:
+        interesados_enero (list | dict): Información de interesados en enero (puede ser lista o dict).
+        interesados_dic (list | dict): Información de interesados en diciembre (puede ser lista o dict).
+    Returns:
+        bool: True si existen diferencias relevantes, False si las diferencias son irrelevantes.
+    """
+    # Convertir en listas si no lo son
+    if isinstance(interesados_enero, str):
+        interesados_enero = [interesados_enero]
+    if isinstance(interesados_dic, str):
+        interesados_dic = [interesados_dic]
+
+    for interesado_enero in interesados_enero:
+        # Validar si es un elemento XML
+        if hasattr(interesado_enero, 'tag') and interesado_enero.tag == 'persona_natural':
+            for atributo in ['primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido']:
+                valor_enero = interesado_enero.find(atributo).text if interesado_enero.find(atributo) is not None else None
+                valor_dic = interesados_dic.find(f'persona_natural/{atributo}').text if interesados_dic.find(f'persona_natural/{atributo}') is not None else None
+                if valor_enero != "DESCONOCIDO" and valor_enero != valor_dic:
+                    return True
+
+        # Si no es un elemento XML, tratar como diccionario o cadena
+        elif isinstance(interesado_enero, dict):
+            for atributo in ['primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido']:
+                valor_enero = interesado_enero.get(atributo, None)
+                valor_dic = interesados_dic.get(atributo, None) if isinstance(interesados_dic, dict) else None
+                if valor_enero != "DESCONOCIDO" and valor_enero != valor_dic:
+                    return True
+    return False
 
 def procesar_carpetas(carpeta_enero, carpeta_dic, reporte):
     """
