@@ -46,10 +46,10 @@ def connect_to_db(reporte):
             password=config('DB_PASSWORD'),
             port=config('DB_PORT')
         )
-        reporte.write(f"Conexión exitosa a la Base de Datos PostgreSQL.\n\n")
+        reporte.write(f"Conexión exitosa a la Base de Datos PostgreSQL DE TRAMITES.\n\n")
         return conn
     except Exception as e:
-        reporte.write(f"Error al conectar con la Base de Datos PostgreSQL: {e}")
+        reporte.write(f"Error al conectar con la Base de Datos PostgreSQL DE TRAMITES: {e}")
         return None
     
 # CONECTAR A LA BASE DE DATOS DE RESOLUCIONES
@@ -59,16 +59,16 @@ def connect_to_db_res(reporte):
     """
     try:
         conn2 = psycopg2.connect(
-            host2=config('DB_HOST'),
-            database2=config('DB_NAME2'),
-            user2=config('DB_USER'),
-            password2=config('DB_PASSWORD'),
-            port2=config('DB_PORT')
+            host=config('DB_HOST'),
+            database=config('DB_NAME2'),
+            user=config('DB_USER'),
+            password=config('DB_PASSWORD'),
+            port=config('DB_PORT')
         )
-        reporte.write(f"Conexión exitosa a la Base de Datos PostgreSQL.\n\n")
+        reporte.write(f"Conexión exitosa a la Base de Datos PostgreSQL DE RESOLUCIONES.\n\n")
         return conn2
     except Exception as e:
-        reporte.write(f"Error al conectar con la Base de Datos PostgreSQL: {e}")
+        reporte.write(f"Error al conectar con la Base de Datos PostgreSQL DE RESOLUCIONES: {e}")
         return None    
 
 def validar_carpetas_y_archivos(ruta_enero_2024, ruta_dic_2024, reporte=None):
@@ -453,6 +453,7 @@ def extraer_codigo_municipio(nombre_archivo):
         return nombre_archivo.split("_")[-1].split(".")[0]
     return None
 
+#FUNCION QUE EXTRAE LOS VALORES DE LA DB DE TRAMITES
 def extract_land_data(db_connection, reporte):
     """
     Función para extraer el atributo 'land' de la consulta definida.
@@ -494,6 +495,83 @@ def extract_land_data(db_connection, reporte):
     except Exception as e:
         reporte.write(f"Error al ejecutar la consulta: {e}\n")
         return set()
+    
+#FUNCIONES QUE EXTRAEN LOS VALORES DE LA DB DE RESOLUCIONES:
+def obtener_esquemas(conn, reporte):
+    """
+    Obtiene los nombres de esquemas que cumplen con el patrón 'cun25XXX'.
+    """
+    esquemas_validos = []
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT schema_name FROM information_schema.schemata;")
+        esquemas = cursor.fetchall()
+
+        # Filtrar esquemas que cumplen con el patrón
+        for esquema in esquemas:
+            if re.match(r'^cun25\d{3}$', esquema[0]):
+                esquemas_validos.append(esquema[0])
+
+        reporte.write(f"Esquemas válidos encontrados: {esquemas_validos}\n")
+        return esquemas_validos
+
+    except Exception as e:
+        reporte.write(f"Error obteniendo esquemas: {e}\n")
+        return []
+    
+def ejecutar_consulta_por_esquema(conn, esquemas, reporte):
+    """
+    Ejecuta la consulta en cada esquema válido y acumula los resultados.
+    """
+    conteo_acumulado = set()
+    try:
+        cursor = conn.cursor()
+
+        for esquema in esquemas:
+            query = f"""
+            SELECT DISTINCT
+                gp.numero_predial
+            FROM
+                {esquema}.gc_predio AS gp
+            INNER JOIN {esquema}.col_unidadfuente AS uf ON uf.unidad = gp.id
+            INNER JOIN {esquema}.gc_fuenteadministrativa AS fa ON fa.id = uf.fuente_administrativa
+            WHERE fa.ente_emisor ILIKE 'Agencia Catastral De Cundinamarca'
+            AND TO_CHAR(fa.fecha_documento_fuente, 'YYYY') = '2024';
+            """
+
+            cursor.execute(query)
+            resultados = cursor.fetchall()
+            conteo_esquema = {fila[0] for fila in resultados}
+            
+            # Actualizar el conteo acumulado
+            conteo_acumulado.update(conteo_esquema)
+
+            # Reportar resultados del esquema
+            reporte.write(f"Esquema: {esquema}\n")
+            reporte.write(f"Predios únicos en este esquema: {len(conteo_esquema)}\n")
+            reporte.write(f"Conteo acumulado hasta ahora: {len(conteo_acumulado)}\n\n")
+
+        return conteo_acumulado
+
+    except Exception as e:
+        reporte.write(f"Error ejecutando consultas: {e}\n")
+        return conteo_acumulado
+    
+# Función principal
+def analizar_db_resoluciones(reporte):
+    conn = connect_to_db_res(reporte)
+    if conn:
+        esquemas = obtener_esquemas(conn, reporte)
+        predios_acumulados = set()  # Inicializar conjunto vacío
+        if esquemas:
+            predios_acumulados = ejecutar_consulta_por_esquema(conn, esquemas, reporte)
+            reporte.write(f"Total de predios acumulados: {len(predios_acumulados)}\n")
+        conn.close()
+        return predios_acumulados  # Devuelve el conjunto de predios acumulados
+    return set()
+
+    
+
 
 def main(ruta_enero_2024, ruta_dic_2024, ruta_resultados):
     """
@@ -611,7 +689,7 @@ def main(ruta_enero_2024, ruta_dic_2024, ruta_resultados):
         if db_connection:
             # Llamar a la función de extracción de datos
             conjunto_land = extract_land_data(db_connection, reporte)
-            reporte.write(f"Valores únicos extraídos: {len(conjunto_land)}\n")
+            reporte.write(f"CANTIDAD DE PREDIOS CON TRAMITES DE LA DB DE TRAMITES EN EL RANGO DE FECHAS: {len(conjunto_land)}\n")
         else:
             reporte.write("No se pudo establecer la conexión con la base de datos.\n")
 
@@ -620,14 +698,26 @@ def main(ruta_enero_2024, ruta_dic_2024, ruta_resultados):
         predios_modificaciones_sin_tramite = acumulados_comunes - conjunto_land
 
         # Reportar los resultados
-        reporte.write("=== Predios con modificaciones en el rango sin trámite ===\n")
+        reporte.write("=== Predios con modificaciones en el rango de fechas sin trámite ===\n")
         for predio in predios_modificaciones_sin_tramite:
             reporte.write(f"{predio}\n")
 
         # Conteo total de predios
         reporte.write("\n=== Estadísticas ===\n")
         reporte.write(f"Cantidad total de predios con modificaciones sin trámite: {len(predios_modificaciones_sin_tramite)}\n")
+        
+        # PARTE DEL CODIGO PARA PROCESAR LOS RESULTADOS DE LA DB DE RESOLUCIONES
+        
         print("Procesamiento completado. Resultados almacenados en el archivo consolidado.")
+
+        reporte.write("Iniciando análisis de la base de datos de resoluciones...\n")
+        predios = analizar_db_resoluciones(reporte)  # Capturar el conjunto devuelto
+        reporte.write(f"Se encontraron {len(predios)} números prediales únicos PARA EL RANGO DE FECHAS EN LA DB DE RESOLUCIONES.\n")
+
+    # Análisis posterior con los números prediales
+    print(f"Total de predios únicos: {len(predios)}")
+    # Aquí puedes realizar otros análisis con el conjunto `predios`
+        
 
 
 if __name__ == "__main__":
