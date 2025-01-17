@@ -570,7 +570,17 @@ def analizar_db_resoluciones(reporte):
         return predios_acumulados  # Devuelve el conjunto de predios acumulados
     return set()
 
-    
+# FUNCION PARA EXTRAER 
+# Función para extraer los primeros 5 caracteres
+def extraer_primeros_5(predios):
+    conteo = {}
+    for predio in predios:
+        clave = predio[:5]  # Extraer los primeros 5 caracteres
+        if clave in conteo:
+            conteo[clave] += 1
+        else:
+            conteo[clave] = 1
+    return conteo    
 
 
 def main(ruta_enero_2024, ruta_dic_2024, ruta_resultados):
@@ -731,14 +741,23 @@ def main(ruta_enero_2024, ruta_dic_2024, ruta_resultados):
         print(f"Cantidad tras restar trámites: {len(predios_sin_tram_res)}")
         reporte.write(f"PARTE 1 CANTIDAD DE PREDIOS SIN TRAMITES ASOCIADOS EN EL RANGO DE FECHAS: {len(predios_sin_tram_res)}\n")
         predios_sin_tram_res = predios_sin_tram_res - predios_res # PREDIOS SIN TRAMITE ASOCIADO NI RESOLUCION ASOCIADA
+        # Convertir a lista y ordenar
+        lista_predios = sorted(list(predios_sin_tram_res))
         # Reportar los resultados SIN TRAMITES NI RESOLUCIONES ASOCIADAS
         print(f"Cantidad tras restar resoluciones: {len(predios_sin_tram_res)}")
         reporte.write("=== Predios con modificaciones en el rango de fechas SIN TRAMITES NI RESOLUCIONES ASOCIADOS ===\n")
-        for predio in predios_sin_tram_res:
+        for predio in lista_predios:
             reporte.write(f"{predio}\n")
         # Conteo Total de predios
         reporte.write("\n=== Estadísticas ===\n")
-        reporte.write(f"Cantidad total de predios con modificaciones sin TRAMINES NI RESOLUCIONES ASOCIADAS: {len(predios_sin_tram_res)}\n\n\n")
+        reporte.write(f"Cantidad total de predios con modificaciones sin TRAMINES NI RESOLUCIONES ASOCIADAS: {len(lista_predios)}\n\n\n")
+        # LLAMAR A LA FUNCION QUE CUENTA POR NUMERO PREDIAL POR CODIGO DE MUNICIPIO
+        conteo_predios = extraer_primeros_5(lista_predios)
+
+        # Reportar los resultados
+        reporte.write("\n=== Conteo de predios CON MODIFICACIONES  QUE NO TIENEN TRAMITE NI RESOLUCION por los MUNICIPIO ===\n")
+        for clave, cantidad in conteo_predios.items():
+            reporte.write(f"{clave}: {cantidad} números prediales\n\n\n\n")
 
         #VALIDAR CONJUNTOS
         interseccion_tramites = acumulados_comunes & conjunto_land
@@ -746,9 +765,15 @@ def main(ruta_enero_2024, ruta_dic_2024, ruta_resultados):
         interseecion_tra_res = conjunto_land & predios_res
         interseecion_xml_tra_res = interseccion_tramites & interseccion_resoluciones
 
-        print(f"Predios con diferencia en el XML y trámites en común: {len(interseccion_tramites)}")
-        print(f"Predios con diferencia en el XML y resoluciones en común: {len(interseccion_resoluciones)}")
-        print(f"Predios que cuentan con tramites y resoluciones: {len(interseecion_tra_res)}")
+        reporte.write("\n=== ESTADISTICAS CON INTERSECCIONES ENTRE CONJUNTOS DE DATOS TODOS ENTRE LAS VIGENCIAS FEB 2024 Y DIC 2024 ===\n")
+        reporte.write(f"Predios con diferencia en el XML y trámites en común (INTERSECCION: PRED DIF XML & PREDIOS CON TRAMITES): {len(interseccion_tramites)}\n")
+        reporte.write(f"Predios con diferencia en el XML y resoluciones en común (INTERSECCION: PRED DIF XML & PREDIOS CON RESOLUCIONES): {len(interseccion_resoluciones)}\n")
+        reporte.write(f"Predios que cuentan con tramites y resoluciones (INTERSECCION: PRED DB TRAMITES & PRED DB RESOLUCIONES): {len(interseecion_tra_res)}\n\n")
+        reporte.write(f"Predios con diferencia en el XML y que tienen tanto resoluciones como tramites: {len(interseecion_xml_tra_res)}\n\n\n")        
+
+        print(f"Predios con diferencia en el XML y trámites en común (INTERSECCION: PRED DIF XML & PREDIOS CON TRAMITES): {len(interseccion_tramites)}")
+        print(f"Predios con diferencia en el XML y resoluciones en común (INTERSECCION: PRED DIF XML & PREDIOS CON RESOLUCIONES): {len(interseccion_resoluciones)}")
+        print(f"Predios que cuentan con tramites y resoluciones (INTERSECCION: PRED DB TRAMITES & PRED DB RESOLUCIONES): {len(interseecion_tra_res)}")
         print(f"Predios con diferencia en el XML y que tienen tanto resoluciones como tramites: {len(interseecion_xml_tra_res)}")
 
 
