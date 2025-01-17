@@ -694,31 +694,67 @@ def main(ruta_enero_2024, ruta_dic_2024, ruta_resultados):
             reporte.write("No se pudo establecer la conexión con la base de datos.\n")
 
         # HACE LA DIFERENCIA ENTRE AMBOS CONJUNTOS DE DATOS, PARA IDENTIFICAR LOS PREDIOS QUE TIENEN MODIFICACIONES EN LA VIGENCIA Y NO TIENEN TRAMITE ASOCIADO
-        # Realizar la diferencia de conjuntos
+        # Realizar la diferencia de conjuntos DE LOS NUMEROS PREDIALES CON DIFERENCIA EN EL XML - LOS NUMEROS PREDIALES DE LA DB DE TRAMITES CON TRAMIETES EN EL 2024
         predios_modificaciones_sin_tramite = acumulados_comunes - conjunto_land
 
-        # Reportar los resultados
+        # Reportar los resultados SIN TRAMITE
         reporte.write("=== Predios con modificaciones en el rango de fechas sin trámite ===\n")
         for predio in predios_modificaciones_sin_tramite:
             reporte.write(f"{predio}\n")
 
         # Conteo total de predios
         reporte.write("\n=== Estadísticas ===\n")
-        reporte.write(f"Cantidad total de predios con modificaciones sin trámite: {len(predios_modificaciones_sin_tramite)}\n")
+        reporte.write(f"Cantidad total de predios con modificaciones sin trámite: {len(predios_modificaciones_sin_tramite)}\n\n\n")
         
+
         # PARTE DEL CODIGO PARA PROCESAR LOS RESULTADOS DE LA DB DE RESOLUCIONES
-        
-        print("Procesamiento completado. Resultados almacenados en el archivo consolidado.")
-
         reporte.write("Iniciando análisis de la base de datos de resoluciones...\n")
-        predios = analizar_db_resoluciones(reporte)  # Capturar el conjunto devuelto
-        reporte.write(f"Se encontraron {len(predios)} números prediales únicos PARA EL RANGO DE FECHAS EN LA DB DE RESOLUCIONES.\n")
+        predios_res = analizar_db_resoluciones(reporte)  # Capturar el conjunto devuelto
+        reporte.write(f"CANTIDAD DE PREDIOS CON RESOLUCIONES DE LA DB DE RESOLUCIONES EN EL RANGO DE FECHAS: {len(predios_res)}\n")
+        # Realizar la diferencia de conjuntos DE LOS NUMEROS PREDIALES CON DIFERENCIA EN EL XML - LOS NUMEROS PREDIALES DE LA DB DE RESOLUCIONES CON RESOLUCIONES EN EL 2024
+        predios_modificaciones_sin_res = acumulados_comunes - predios_res
 
-    # Análisis posterior con los números prediales
-    print(f"Total de predios únicos: {len(predios)}")
-    # Aquí puedes realizar otros análisis con el conjunto `predios`
+        # Reportar los resultados SIN RESOLUCION
+        reporte.write("=== Predios con modificaciones en el rango de fechas sin resoluciones ===\n")
+        for predio in predios_modificaciones_sin_res:
+            reporte.write(f"{predio}\n")
         
+        # Conteo Total de predios
+        reporte.write("\n=== Estadísticas ===\n")
+        reporte.write(f"Cantidad total de predios con modificaciones sin resoluciones: {len(predios_modificaciones_sin_res)}\n\n\n")
 
+        # PARTE DEL CODIGO PARA PROCESAR LOS RESULTADOS DE NUMEROS PREDIALES, CON CAMBIOS ENTRE LAS VIGENCIAS SIN TRAMITES NI RESOLUCIONES ASOCIADAS
+        reporte.write("Iniciando análisis de la PREDIOS CON DIFERENCIAS IDENTIFICADOS EN LAS VIGENCIAS MEDIANTE LOS .XML. QUE NO CUENTAN CON TRAMITES NI RESOLUCIONES ASOCIADAS...\n")
+        print(f"Cantidad inicial: {len(acumulados_comunes)}")
+        predios_sin_tram_res = acumulados_comunes
+        predios_sin_tram_res = predios_sin_tram_res - conjunto_land # PREDIOS SIN TRAMITE ASOCIADO
+        print(f"Cantidad tras restar trámites: {len(predios_sin_tram_res)}")
+        reporte.write(f"PARTE 1 CANTIDAD DE PREDIOS SIN TRAMITES ASOCIADOS EN EL RANGO DE FECHAS: {len(predios_sin_tram_res)}\n")
+        predios_sin_tram_res = predios_sin_tram_res - predios_res # PREDIOS SIN TRAMITE ASOCIADO NI RESOLUCION ASOCIADA
+        # Reportar los resultados SIN TRAMITES NI RESOLUCIONES ASOCIADAS
+        print(f"Cantidad tras restar resoluciones: {len(predios_sin_tram_res)}")
+        reporte.write("=== Predios con modificaciones en el rango de fechas SIN TRAMITES NI RESOLUCIONES ASOCIADOS ===\n")
+        for predio in predios_sin_tram_res:
+            reporte.write(f"{predio}\n")
+        # Conteo Total de predios
+        reporte.write("\n=== Estadísticas ===\n")
+        reporte.write(f"Cantidad total de predios con modificaciones sin TRAMINES NI RESOLUCIONES ASOCIADAS: {len(predios_sin_tram_res)}\n\n\n")
+
+        #VALIDAR CONJUNTOS
+        interseccion_tramites = acumulados_comunes & conjunto_land
+        interseccion_resoluciones = acumulados_comunes & predios_res
+        interseecion_tra_res = conjunto_land & predios_res
+        interseecion_xml_tra_res = interseccion_tramites & interseccion_resoluciones
+
+        print(f"Predios con diferencia en el XML y trámites en común: {len(interseccion_tramites)}")
+        print(f"Predios con diferencia en el XML y resoluciones en común: {len(interseccion_resoluciones)}")
+        print(f"Predios que cuentan con tramites y resoluciones: {len(interseecion_tra_res)}")
+        print(f"Predios con diferencia en el XML y que tienen tanto resoluciones como tramites: {len(interseecion_xml_tra_res)}")
+
+
+        #CIERRE DEL CODIGO
+        reporte.write("Procesamiento completado.")
+        print("Procesamiento completado. Resultados almacenados en el archivo consolidado.")
 
 if __name__ == "__main__":
     # Lista global para acumular los números prediales totales
