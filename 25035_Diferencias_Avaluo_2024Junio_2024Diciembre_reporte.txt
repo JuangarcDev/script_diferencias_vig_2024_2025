@@ -1,0 +1,40 @@
+Reporte consolidado de validación de archivos
+------------------------------------------------
+
+Conexión exitosa a la Base de Datos PostgreSQL DE TRAMITES.
+
+Conteo inicial de archivos:
+- 2024 Junio: 1 archivos encontrados
+- 2024 Diciembre: 1 archivos encontrados
+
+Archivos que cumplen con la estructura de nombre:
+- 2024 Junio: 1 archivos válidos
+- 2024 Diciembre: 1 archivos válidos
+
+Archivos que no cumplen con la estructura:
+- 2024 Junio: 0 archivos no válidos
+  Nombres: 
+- 2024 Diciembre: 0 archivos no válidos
+  Nombres: 
+
+Diferencias entre las carpetas:
+- Archivos faltantes en 2024 Junio: 0
+  Nombres: Ninguno
+- Archivos faltantes en 2024 Diciembre: 0
+  Nombres: Ninguno
+
+
+=== Comparando archivo Registro_catastral_25035 ===
+=== Predios en comun entre ambas vigencias, con disminución del 90% o más en avalúo ===
+Lista de predios con modificación superior al 90%: 
+
+
+
+=== Estadísticas ===
+Cantidad de predios con disminución del 90% o más: 0
+Cantidad total acumulada para todos los municipios: 0
+
+
+
+=== ESTADISTICAS PREDIOS CON DIFERENCIAS DE MÁS DEL 90 EN EL VALOR DE SU AVALUO LISTA COMPLETA: ===
+Procesamiento completado.

@@ -471,7 +471,7 @@ def extract_land_data(db_connection, reporte):
     JOIN data.land_tansacts_tracking t2
     ON t2.transact = t1.id
     WHERE t2.transact IS NOT NULL 
-    AND t1.estado_actual_fecha_inicio >= '2024-02-01 00:00:00'
+    AND t1.estado_actual_fecha_inicio >= '2024-01-01 00:00:00'
     AND t1.estado_actual_fecha_inicio <= '2024-12-31 23:59:59'
     AND t1.estado_actual = 8;
     """
@@ -786,8 +786,8 @@ if __name__ == "__main__":
     acumulados_comunes = set()
 
     # Rutas de ejemplo, actualiza según tu entorno
-    ruta_enero_2024 = r"C:\ACC\SCRIPT_13012025_COMP_MPIO_2024_2025\Registros_2024_feb"
-    ruta_dic_2024 = r"C:\ACC\SCRIPT_13012025_COMP_MPIO_2024_2025\Registros_2024_dic"
+    ruta_enero_2024 = r"C:\ACC\SCRIPT_13012025_COMP_MPIO_2024_2025\Mpios_Faltantes\Junio2024"
+    ruta_dic_2024 = r"C:\ACC\SCRIPT_13012025_COMP_MPIO_2024_2025\Mpios_Faltantes\Diciembre2024"
     ruta_resultados = r"C:\ACC\SCRIPT_13012025_COMP_MPIO_2024_2025\Script_Diferencias_Mpios_2024_2025"
 
     if not os.path.exists(ruta_resultados):

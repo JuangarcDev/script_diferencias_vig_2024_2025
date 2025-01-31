@@ -1,0 +1,19 @@
+### REPORTE DE ELIMINACIÓN DE PREDIOS ###
+Total líneas en TXT: 2367
+Total identificadores únicos: 2362
+Duplicados encontrados: 5
+
+Cantidad inicial de predios en XML: 7633
+Cantidad de números prediales identificados desde el TXT: 2362
+Cantidad de números prediales presentes en el TXT pero no en el XML: 6
+Cantidad de predios eliminados desde TXT: 2356
+Cantidad de predios eliminados por regla '01' en posición 6-7: 629
+Cantidad final de predios en XML: 4648
+
+Predios en TXT que no fueron identificados en el XML:
+'254360000000000240005000000000'
+'254360000000000240004000000000'
+'254360000000000020276000000000'
+'254360000000000020652000000000'
+'254360000000000070245000000000'
+'254360000000000010035000000000'
